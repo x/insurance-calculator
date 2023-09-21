@@ -1,87 +1,200 @@
 <head>
     <title>Insurance Calculator</title>
-    <meta name="description" content="A tool for comparing insurance plans given a fixed set of claims." />
+    <meta x-model.number="description"
+        content="A tool for comparing insurance plans given a recurring set of claims." />
     <meta name="author" content="Devon Peticolas" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="./js/app.js"></script>
+    <!-- <script defer="" src="https://unpkg.com/@alpinejs/mask@3.13.0/dist/cdn.min.js"></script> -->
+    <script defer="" src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="./css/pico.min.css">
     <link rel="stylesheet" href="./css/app.css">
 </head>
 
 <body>
     <main class="container">
-        <hgroup>
-            <h1>Insurance Plan Simulator</h1>
-            <h2>Simulate your insurance plan.</h2>
-        </hgroup>
-
-        <article>
+        <center>
             <hgroup>
-                <h2>Plan Details</h2>
-                <h3>Enter the details of your insurance plan</h3>
+                <h1>Recurring Claims Insurance Simulator</h1>
+                <h2>Calculate your health care cost given your insurance plan and recurring claims</h2>
             </hgroup>
-            <form>
+        </center>
+        <article x-data="app()" x-effect="calculate()">
+
+            <body>
+                <hgroup>
+                    <h2>Plan Details</h2>
+                    <h3>Enter the details of your insurance plan</h3>
+                </hgroup>
                 <div class="grid">
                     <div>
                         <label for="deductable">
                             Deductable
-                            <input type="number" id="deductable" name="deductable" placeholder="3000" required>
+                            <input type="number" id="deductable" x-model.number="input.deductable">
+                            <small>How much you'll pay before insurance starts to cover the claims.</small>
                         </label>
                     </div>
                     <div>
-                        <label for "oop_max">
+                        <label for "oopMax">
                             Out-of-pocket Max
-                            <input type="number" id="oop_max" name="oop_max" placeholder="6500" required>
+                            <input type="number" id="oopMax" x-model.number="input.oopMax">
+                            <small>The limit of what you'll pay in one year, out of pocket.</small>
                         </label>
                     </div>
                 </div>
+                <br />
 
                 <div class="grid">
                     <div>
                         <label for="copay">
                             Copay
-                            <input type="number" id="copay" name="copay" placeholder="30" required>
+                            <input type="number" id="copay" x-model.number="input.copay">
+                            <small>A predetermined rate you pay at the time of care.</small>
                         </label>
                     </div>
                     <div>
                         <label for="coinsurance">
-                            Coinsurance
-                            <input type="number" id="coinsurance" name="coinsurance" placeholder="0" required>
+                            Coinsurance (%)
+                            <input type="number" id="coinsurance" min=0 max=100 x-model.number="input.coinsurance">
+                            <small>A percentage of the claim you'll pay after your deductible has been met.</small>
                         </label>
                     </div>
                 </div>
-                <label for="copay_after_ded">
+                <label for="copayOnlyAfterDed">
+                    <input type="checkbox" id="copayOnlyAfterDed" x-model="input.copayOnlyAfterDeductable"
+                        role="switch">
                     Copay Only After Deductable
-                    <div><input type="checkbox" id="copay_after_ded" name="copay_after_ded" role="switch" required></div>
                 </label>
-                <br>
-                <hr>
+                <br />
+                <hr />
 
                 <hgroup>
                     <h2>Plan Cost</h2>
-                    <h3>Enter the monthly cost for this plan through your employer</h3>
+                    <h3>Enter cost of your insurance plan</h3>
                 </hgroup>
-                <label for="monthly_cost">
-                    Monthly Cost
-                    <input type="number" id="monthly_cost" name="monthly_cost" placeholder="100" required>
-                </label>
-                <br>
-                <hr>
+                <div class="grid">
+                    <label for="premiumCost">
+                        Premium
+                        <input type="number" id="premiumCost" x-model.number="input.premiumCost">
+                        <small>The amount you pay for your insurance.</small>
+                    </label>
+
+                    <div>
+                        <label for="premiumFrequency">Frquency</label>
+                        <select id="premiumFrequency" x-model.number="input.premiumFrequency">
+                            <option value="year">Per Year</option>
+                            <option value="month" selected>Per Month</option>
+                            <option value="week">Per Week</option>
+                        </select>
+                    </div>
+
+                </div>
+                <br />
+                <hr />
 
                 <hgroup>
                     <h2>Claim Estimates</h2>
-                    <h3>Enter an estimation of the claims you'll be making</h3>
+                    <h3>Enter an estimation of the recurring claims you'll be making</h3>
                 </hgroup>
-                <label for="claim_cost">
-                    Average Claim Cost
-                    <input type="number" id="claim_cost" name="claim_cost" placeholder="100" required>
+                <label for="claimCost">
+                    Typical Claim Cost
+                    <input type="number" id="claimCost" x-model.number="input.claimCost">
+                    <small>Average claim cost after insurance discount.</small>
                 </label>
-                <label for="num_claims">
-                    Expected Number of Claims
-                    <input type="number" id="num_claims" name="num_claims" placeholder="24" required>
-                </label>
-            </form>
+                <div class="grid">
+                    <div>
+                        <label for="numClaims">
+                            Number of Claims
+                            <input type="number" id="numClaims" x-model.number="input.numClaims">
+                        </label>
+                    </div>
+                    <div>
+                        <label for="claimFrequency">Frquency</label>
+                        <select id="claimFrequency" x-model.number="input.claimFrequency">
+                            <option value="year">Per Year</option>
+                            <option value="month" selected>Per Month</option>
+                            <option value="week">Per Week</option>
+                        </select>
+                    </div>
+                </div>
+                <p>Estimating <u><span x-text="out.numClaimsPerYear"></span></u> claims in the year.</p>
+            </body>
+            <footer>
+                <hgroup>
+                    <h2>Cost Breakdown</h2>
+                    <h3>The total cost of your insurance plan given your estimated claims</h3>
+                </hgroup>
+
+                <u>
+                    <stong>Est. Before Deductable</strong>
+                </u>
+                <table>
+                    <tr>
+                        <td>Number of Claims</td>
+                        <td><span x-text="out.numClaimsBeforeDeductable"></span> Claims</td>
+                    </tr>
+                    <tr>
+                        <td>Cost of Claims</td>
+                        <td><span x-text="formatMoney(out.costClaimsBeforeDeductable)"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Cost of Copay</td>
+                        <td><span x-text="formatMoney(out.costCopayBeforeDeductable)"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Total Before Deductable</td>
+                        <td><span x-text="formatMoney(out.costTotalBeforeDeductable)"></span></td>
+                    </tr>
+                </table>
+
+                <u>
+                    <stong>Est. After Deductable</strong>
+                </u>
+                <table>
+                    <tr>
+                        <td>Number of Claims</td>
+                        <td><span x-text="out.numClaimsAfterDeductable"></span> Claims</td>
+                    </tr>
+                    <tr>
+                        <td>Cost of Copay</td>
+                        <td><span x-text="formatMoney(out.costCopayAfterDeductable)"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Cost of Coinsurance</td>
+                        <td><span x-text="formatMoney(out.costCoinsuranceAfterDeductable)"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Total After Deductable</td>
+                        <td><span x-text="formatMoney(out.costTotalAfterDeductable)"></span></td>
+                    </tr>
+                </table>
+
+                <u>
+                    <stong>Total</strong>
+                </u>
+                <table>
+                    <tr>
+                        <td>Total Out of Pocket</td>
+                        <td><span x-text="formatMoney(out.costTotalOutOfPocket)"></span> / <span
+                                x-text="formatMoney(input.oopMax)"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Total Cost of Insurance</td>
+                        <td><span x-text="formatMoney(out.costTotalOnInsurance)"></span></td>
+                    </tr>
+                    <tr>
+                        <td>Total Cost</td>
+                        <td><span x-text="formatMoney(out.costTotal)"></span></td>
+                    </tr>
+                </table>
+            </footer>
         </article>
+        <center>
+            <p>
+                Calculator by <a class="secondary" href="https://peticol.as">Devon Peticolas</a>.
+                Get the source or submit a PR <a class="secondary" href="https://github.com/x/insurance-calculator">on
+                    github</a>.
+            </p>
+        </center>
     </main>
+    <script src="./js/app.js"></script>
 </body>
