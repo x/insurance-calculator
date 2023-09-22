@@ -38,9 +38,9 @@
                         </label>
                     </div>
                     <div>
-                        <label for "oopMax">
+                        <label for "outOfPocketMax">
                             Out-of-pocket Max
-                            <input type="number" id="oopMax" x-model.number="input.oopMax">
+                            <input type="number" id="outOfPocketMax" x-model.number="input.outOfPocketMax">
                             <small>The limit of what you'll pay in one year, out of pocket.</small>
                         </label>
                     </div>
@@ -120,7 +120,7 @@
                         </select>
                     </div>
                 </div>
-                <p>Estimating <u><span x-text="out.numClaimsPerYear"></span></u> claims in the year.</p>
+                <p>Estimating <u><span x-text="out.numClaims"></span></u> claims in the year.</p>
             </body>
             <footer>
                 <hgroup>
@@ -179,7 +179,7 @@
                     <tr>
                         <td>Total Out of Pocket</td>
                         <td><span x-text="formatMoney(out.costTotalOutOfPocket)"></span> / <span
-                                x-text="formatMoney(input.oopMax)"></span></td>
+                                x-text="formatMoney(input.outOfPocketMax)"></span></td>
                     </tr>
                     <tr>
                         <td>Total Cost of Insurance</td>
@@ -204,7 +204,7 @@
         const app = () => ({
             input: {
                 deductable: 2000,
-                oopMax: 6850,
+                outOfPocketMax: 6850,
                 copay: 30,
                 coinsurance: 20,
                 copayOnlyAfterDeductable: false,
@@ -214,6 +214,22 @@
                 numClaims: 2,
                 claimFrequency: "month"
             },
+
+            out: {
+                numClaims: 0,
+                numClaimsBeforeDeductable: 0,
+                numClaimsAfterDeductable: 0,
+                costClaimsBeforeDeductable: 0,
+                costCopayBeforeDeductable: 0,
+                costCopayAfterDeductable: 0,
+                costCoinsuranceAfterDeductable: 0,
+                costTotalBeforeDeductable: 0,
+                costTotalAfterDeductable: 0,
+                costTotalOnInsurance: 0,
+                costTotalOutOfPocket: 0,
+                costTotal: 0,
+            },
+
 
             totalPremiumCost: function () {
                 if (this.input.premiumFrequency === "week") {
@@ -244,50 +260,112 @@
             },
 
             calculate: function () {
-                let numClaimsPerYear = this.claimsPerYear();
-                let deductableRemaining = this.input.deductable;
+                let numClaims = this.claimsPerYear();
+                
+                let deductableMet = 0;
+                let outOfPocket = 0;
+
                 let numClaimsBeforeDeductable = 0;
                 let numClaimsAfterDeductable = 0;
-                let costClaimsBeforeDeductable = 0;
                 let costCopayBeforeDeductable = 0;
                 let costCopayAfterDeductable = 0;
                 let costCoinsuranceAfterDeductable = 0;
-                let costTotalOutOfPocket = 0;
-                let coinsurance = this.input.claimCost * (this.input.coinsurance / 100);
-                for (let i=0; i < numClaimsPerYear; i++) {
-                    if (deductableRemaining > 0) {
+
+                // Add up to deductables using claims
+                for (let i=0; i < numClaims; i++) {
+
+                    // Pre-deductable, we only pay for the claim and maybe the copay
+                    if (deductableMet < this.input.deductable) {
                         numClaimsBeforeDeductable += 1;
-                        deductableRemaining -= this.input.claimCost;
-                        costClaimsBeforeDeductable += this.input.claimCost;
-                        costTotalOutOfPocket += this.input.claimCost;
+                        
+                        // The claim cost can not exceed the deductable or OOP Max
+                        let claimConsideringDeductableAndOopMax = Math.min(
+                            this.input.claimCost,
+                            this.input.deductable - deductableMet,
+                            this.input.outOfPocketMax - outOfPocket,
+                        );
+                        
+                        // It's possible we may also have to pay co-insurance on the remainder
+                        let claimRemainderAfterDeductable = Math.max(
+                            this.input.claimCost - (this.input.deductable - deductableMet),
+                            0,
+                        );
+                        
+                        // This claim counts twoards the deductable met and the OOP Max
+                        deductableMet += claimConsideringDeductableAndOopMax;
+                        outOfPocket += claimConsideringDeductableAndOopMax;
+
+                        // If we've met the OOP Max, stop
+                        if (outOfPocket >= this.input.outOfPocketMax) break;
+
+                        // It's possible that we also pay a copay
                         if (!this.input.copayOnlyAfterDeductable) {
-                            costCopayBeforeDeductable += this.input.copay;
-                            costTotalOutOfPocket += this.input.copay;
+                            copayConsideringOopMax = Math.min(
+                                this.input.copay,
+                                this.input.outOfPocketMax - outOfPocket,
+                            );
+                            costCopayBeforeDeductable += copayConsideringOopMax;
+                            outOfPocket += copayConsideringOopMax;
+
+                            // And, if we exceed the OOP max, stop
+                            if (outOfPocket >= this.input.outOfPocketMax) break;
                         }
+                        
+                        // If there's a remainder, pay post-deductable co-insurance on it
+                        if (claimRemainderAfterDeductable > 0) {
+                            coinsuranceConsideringOopMax = Math.min(
+                                claimRemainderAfterDeductable * (this.input.coinsurance / 100),
+                                this.input.outOfPocketMax - outOfPocket,
+                            )
+                            costCoinsuranceAfterDeductable += coinsuranceConsideringOopMax;
+                            outOfPocket += coinsuranceConsideringOopMax;
+                            
+                            // And, if we exceed the OOP max, stop
+                            if (outOfPocket >= this.input.outOfPocketMax) break;
+                        }
+
                     } else {
+
+                        // Post-deductable, we only pay the copay and coinsurance
                         numClaimsAfterDeductable += 1;
-                        costCopayAfterDeductable += this.input.copay;
-                        costTotalOutOfPocket += this.input.copay;
-                        costCoinsuranceAfterDeductable += coinsurance;
-                        costTotalOutOfPocket += coinsurance;
-                    }
-                    if (costTotalOutOfPocket >= this.input.oopMax) {
-                        break;
+                        
+                        // But don't exceed the OOP Max
+                        let copayConsideringOopMax = Math.min(
+                            this.input.copay,
+                            this.input.outOfPocketMax - outOfPocket,
+                        );
+                        costCopayAfterDeductable += copayConsideringOopMax;
+                        outOfPocket += copayConsideringOopMax;
+
+                        // And, if we exceed the OOP max, stop
+                        if (outOfPocket >= this.input.outOfPocketMax) break;
+
+                        // We also pay coinsurance
+                        let coinsuranceConsideringOopMax = Math.min(
+                            this.input.claimCost * (this.input.coinsurance / 100),
+                            this.input.outOfPocketMax - outOfPocket,
+                        )
+                        costCoinsuranceAfterDeductable += coinsuranceConsideringOopMax;
+                        outOfPocket += coinsuranceConsideringOopMax;
+
+                        // And, if we exceed the OOP max, stop
+                        if (outOfPocket >= this.input.outOfPocketMax) break;
                     }
                 }
+
                 this.out = {
-                    numClaimsPerYear: numClaimsPerYear,
+                    numClaims: numClaims,
                     numClaimsBeforeDeductable: numClaimsBeforeDeductable,
                     numClaimsAfterDeductable: numClaimsAfterDeductable,
-                    costClaimsBeforeDeductable: costClaimsBeforeDeductable,
+                    costClaimsBeforeDeductable: deductableMet,
                     costCopayBeforeDeductable: costCopayBeforeDeductable,
                     costCopayAfterDeductable: costCopayAfterDeductable,
                     costCoinsuranceAfterDeductable: costCoinsuranceAfterDeductable,
-                    costTotalBeforeDeductable: costClaimsBeforeDeductable + costCopayBeforeDeductable,
+                    costTotalBeforeDeductable: deductableMet + costCopayBeforeDeductable,
                     costTotalAfterDeductable: costCopayAfterDeductable + costCoinsuranceAfterDeductable,
                     costTotalOnInsurance: this.totalPremiumCost(),
-                    costTotalOutOfPocket: costTotalOutOfPocket,
-                    costTotal: this.totalPremiumCost() + costTotalOutOfPocket,
+                    costTotalOutOfPocket: outOfPocket,
+                    costTotal: this.totalPremiumCost() + outOfPocket,
                 }
             }
         });
