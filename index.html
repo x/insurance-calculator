@@ -229,6 +229,36 @@
                 costTotal: 0,
             },
 
+            init() {
+                this.loadFromUrlParams();
+                this.$watch('input', () => {
+                    this.updateUrlParams();
+                });
+            },
+
+            loadFromUrlParams() {
+                const params = new URLSearchParams(window.location.search);
+                this.input.deductable = +params.get('deductable') || this.input.deductable;
+                this.input.outOfPocketMax = +params.get('outOfPocketMax') || this.input.outOfPocketMax;
+                this.input.copay = +params.get('copay') || this.input.copay;
+                this.input.coinsurance = +params.get('coinsurance') || this.input.coinsurance;
+                this.input.copayOnlyAfterDeductable = params.get('copayOnlyAfterDeductable') === 'true' || this.input.copayOnlyAfterDeductable;
+                this.input.premiumCost = +params.get('premiumCost') || this.input.premiumCost;
+                this.input.premiumFrequency = params.get('premiumFrequency') || this.input.premiumFrequency;
+                this.input.claimCost = +params.get('claimCost') || this.input.claimCost;
+                this.input.numClaims = +params.get('numClaims') || this.input.numClaims;
+                this.input.claimFrequency = params.get('claimFrequency') || this.input.claimFrequency;
+            },
+
+            updateUrlParams() {
+                const params = new URLSearchParams();
+                Object.keys(this.input).forEach(key => {
+                    params.set(key, this.input[key]);
+                });
+
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                window.history.replaceState({}, '', newUrl);
+            },
 
             totalPremiumCost: function () {
                 if (this.input.premiumFrequency === "week") {
