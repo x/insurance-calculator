@@ -29,6 +29,12 @@
                     <h2>Plan Details</h2>
                     <h3>Enter the details of your insurance plan</h3>
                 </hgroup>
+                <label>
+                    Plan Name
+                    <input type="text" x-model="input.planName">
+                    <small>Name of the plan (optional).</small>
+                </label>
+                <br />
                 <div class="grid">
                     <div>
                         <label for="deductable">
@@ -202,6 +208,7 @@
     <script>
         const app = () => ({
             input: {
+                planName: "Insurance Plan",
                 deductable: 2000,
                 outOfPocketMax: 6850,
                 copay: 30,
@@ -238,6 +245,7 @@
 
             loadFromUrlParams() {
                 const params = new URLSearchParams(window.location.search);
+                this.input.planName = params.get('planName') || this.input.planName;
                 this.input.deductable = +params.get('deductable') || this.input.deductable;
                 this.input.outOfPocketMax = +params.get('outOfPocketMax') || this.input.outOfPocketMax;
                 this.input.copay = +params.get('copay') || this.input.copay;
