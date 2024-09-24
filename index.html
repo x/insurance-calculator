@@ -245,17 +245,17 @@
 
             loadFromUrlParams() {
                 const params = new URLSearchParams(window.location.search);
-                this.input.planName = params.get('planName') || this.input.planName;
-                this.input.deductable = +params.get('deductable') || this.input.deductable;
-                this.input.outOfPocketMax = +params.get('outOfPocketMax') || this.input.outOfPocketMax;
-                this.input.copay = +params.get('copay') || this.input.copay;
-                this.input.coinsurance = +params.get('coinsurance') || this.input.coinsurance;
-                this.input.copayOnlyAfterDeductable = params.get('copayOnlyAfterDeductable') === 'true' || this.input.copayOnlyAfterDeductable;
-                this.input.premiumCost = +params.get('premiumCost') || this.input.premiumCost;
-                this.input.premiumFrequency = params.get('premiumFrequency') || this.input.premiumFrequency;
-                this.input.claimCost = +params.get('claimCost') || this.input.claimCost;
-                this.input.numClaims = +params.get('numClaims') || this.input.numClaims;
-                this.input.claimFrequency = params.get('claimFrequency') || this.input.claimFrequency;
+                this.input.planName = params.get('planName') ?? this.input.planName;
+                this.input.deductable = +params.get('deductable') ?? this.input.deductable;
+                this.input.outOfPocketMax = +params.get('outOfPocketMax') ?? this.input.outOfPocketMax;
+                this.input.copay = +params.get('copay') ?? this.input.copay;
+                this.input.coinsurance = +params.get('coinsurance') ?? this.input.coinsurance;
+                this.input.copayOnlyAfterDeductable = params.get('copayOnlyAfterDeductable') === 'true' ?? this.input.copayOnlyAfterDeductable;
+                this.input.premiumCost = +params.get('premiumCost') ?? this.input.premiumCost;
+                this.input.premiumFrequency = params.get('premiumFrequency') ?? this.input.premiumFrequency;
+                this.input.claimCost = +params.get('claimCost') ?? this.input.claimCost;
+                this.input.numClaims = +params.get('numClaims') ?? this.input.numClaims;
+                this.input.claimFrequency = params.get('claimFrequency') ?? this.input.claimFrequency;
             },
 
             updateUrlParams() {
@@ -298,7 +298,7 @@
 
             calculate: function () {
                 let numClaims = this.claimsPerYear();
-                
+
                 let deductableMet = 0;
                 let outOfPocket = 0;
 
@@ -314,20 +314,20 @@
                     // Pre-deductable, we only pay for the claim and maybe the copay
                     if (deductableMet < this.input.deductable) {
                         numClaimsBeforeDeductable += 1;
-                        
+
                         // The claim cost can not exceed the deductable or OOP Max
                         let claimConsideringDeductableAndOopMax = Math.min(
                             this.input.claimCost,
                             this.input.deductable - deductableMet,
                             this.input.outOfPocketMax - outOfPocket,
                         );
-                        
+
                         // It's possible we may also have to pay co-insurance on the remainder
                         let claimRemainderAfterDeductable = Math.max(
                             this.input.claimCost - (this.input.deductable - deductableMet),
                             0,
                         );
-                        
+
                         // This claim counts twoards the deductable met and the OOP Max
                         deductableMet += claimConsideringDeductableAndOopMax;
                         outOfPocket += claimConsideringDeductableAndOopMax;
@@ -347,7 +347,7 @@
                             // And, if we exceed the OOP max, stop
                             if (outOfPocket >= this.input.outOfPocketMax) break;
                         }
-                        
+
                         // If there's a remainder, pay post-deductable co-insurance on it
                         if (claimRemainderAfterDeductable > 0) {
                             coinsuranceConsideringOopMax = Math.min(
@@ -356,7 +356,7 @@
                             )
                             costCoinsuranceAfterDeductable += coinsuranceConsideringOopMax;
                             outOfPocket += coinsuranceConsideringOopMax;
-                            
+
                             // And, if we exceed the OOP max, stop
                             if (outOfPocket >= this.input.outOfPocketMax) break;
                         }
@@ -365,7 +365,7 @@
 
                         // Post-deductable, we only pay the copay and coinsurance
                         numClaimsAfterDeductable += 1;
-                        
+
                         // But don't exceed the OOP Max
                         let copayConsideringOopMax = Math.min(
                             this.input.copay,
